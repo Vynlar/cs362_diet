@@ -7,6 +7,8 @@ module Food
 
 import Numeric.LinearProgramming
 import Data.List
+import Text.PrettyPrint.Boxes
+import Text.Printf
 
 data Food = Food { name :: String
                  , cost :: Double -- dollars
@@ -112,13 +114,36 @@ nutrientBounds =
 diet :: Solution
 diet = simplex opt constraints []
 
-nutrients = [ (calories, "calories")
+nutrients = [ (calories, "Calories")
             , (satFat, "Saturated Fat")
             , (sodium, "Sodium")
             , (vitC, "Vitamin C")
             , (vitA, "Vitamin A")
             , (protein, "Protein")
             ]
+
+summary :: Solution -> [[String]]
+summary (Optimal (_, amounts)) =
+  [ "Food" : "Servings" : map snd nutrients ]
+  ++ (map makeRow $ zip amounts foods)
+  where
+    makeRow :: (Double, Food) -> [String]
+    makeRow (amount, food) =
+      (name food) : (printFloat amount) :
+        (( map printFloat
+        . map (\(getNutrient, _) -> amount * getNutrient food)
+        ) nutrients)
+
+    printFloat = printf "%.2f"
+summary _ = error "No feasible diet exists."
+
+calculateFood :: IO ()
+calculateFood = printTable $ summary diet
+
+printTable :: [[String]] -> IO ()
+printTable rows = printBox $ hsep 2 left (map (vcat left . map text) (transpose rows))
+
+{-
 
 scaleFood :: Double -> Food -> Food
 scaleFood factor food =
@@ -171,6 +196,6 @@ amountSummary (Optimal (_, amounts)) =
   where
     scaled =
       map (\(amount, food) -> scaleFood amount food) $ zip amounts foods
+  ->
 
-calculateFood :: IO ()
-calculateFood = putStrLn $ amountSummary diet ++ "\n\n\n" ++ nutrientSummary diet
+-}
