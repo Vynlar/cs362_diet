@@ -167,7 +167,7 @@ nutrientSummary (Optimal (_, amounts)) =
 
 amountSummary :: Solution -> String
 amountSummary (Optimal (_, amounts)) =
-  (concat . intersperse "\n" . map (\food -> name food ++ ": " ++ (show $ mass food) ++ " grams")) scaled
+  (concat . intersperse "\n" . map (\(amount, food) -> name food ++ ": " ++ (show $ mass food) ++ " grams" ++ " amount: " ++ show amount)) $ zip amounts scaled
   where
     scaled =
       map (\(amount, food) -> scaleFood amount food) $ zip amounts foods
