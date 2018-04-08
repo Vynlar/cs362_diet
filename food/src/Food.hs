@@ -23,7 +23,7 @@ data Food = Food { name :: String
 
 foods :: [Food]
 foods =
-  [ Food { name="avocado"
+  [ Food { name="Avocado"
          , cost=1.58
          , mass=214
          , calories=318
@@ -33,7 +33,7 @@ foods =
          , vitA=15
          , protein=4.4
          }
-  , Food { name="steak"
+  , Food { name="Steak"
          , cost=4.12
          , mass=182
          , calories=379
@@ -43,7 +43,7 @@ foods =
          , vitA=0
          , protein=46
          }
-  , Food { name="ice cream"
+  , Food { name="Ice Cream"
          , cost=0.97
          , mass=107
          , calories=194
@@ -73,7 +73,7 @@ foods =
          , vitA=0
          , protein=1.8
          }
-  , Food { name="broccoli"
+  , Food { name="Broccoli"
          , cost=0.56
          , mass=85
          , calories=26
@@ -83,7 +83,7 @@ foods =
          , vitA=57
          , protein=2.5
          }
-  , Food { name="egg"
+  , Food { name="Egg"
          , cost=1.66/12 -- 1.66 per dozen eggs
          , mass=35
          , calories=55
@@ -114,7 +114,8 @@ nutrientBounds =
 diet :: Solution
 diet = simplex opt constraints []
 
-nutrients = [ (calories, "Calories")
+nutrients = [ (cost, "Cost") -- not a nutrient per say, but still part of our report
+            , (calories, "Calories")
             , (satFat, "Saturated Fat")
             , (sodium, "Sodium")
             , (vitC, "Vitamin C")
@@ -126,6 +127,8 @@ summary :: Solution -> [[String]]
 summary (Optimal (_, amounts)) =
   [ "Food" : "Servings" : map snd nutrients ]
   ++ (map makeRow $ zip amounts foods)
+  ++ blankLine
+  ++ [totals]
   where
     makeRow :: (Double, Food) -> [String]
     makeRow (amount, food) =
@@ -134,7 +137,19 @@ summary (Optimal (_, amounts)) =
         . map (\(getNutrient, _) -> amount * getNutrient food)
         ) nutrients)
 
+    totals :: [String]
+    totals =
+      [ "Total", "n/a" ]
+      ++ (map makeTotal nutrients)
+
+    makeTotal :: ((Food -> Double), String) -> String
+    makeTotal (getNutrient, _) =
+      (printFloat . sum . map (\(food, amount) -> amount * getNutrient food)) $ zip foods amounts
+
     printFloat = printf "%.2f"
+
+    blankLine =
+      [replicate (2 + length nutrients) "-----"]
 summary _ = error "No feasible diet exists."
 
 calculateFood :: IO ()
@@ -143,59 +158,5 @@ calculateFood = printTable $ summary diet
 printTable :: [[String]] -> IO ()
 printTable rows = printBox $ hsep 2 left (map (vcat left . map text) (transpose rows))
 
-{-
-
-scaleFood :: Double -> Food -> Food
-scaleFood factor food =
-  Food { name=name food
-       , cost=factor*cost food
-       , mass=factor*mass food
-       , calories=factor*calories food
-       , satFat=factor*satFat food
-       , sodium=factor*sodium food
-       , vitC=factor*vitC food
-       , vitA=factor*vitA food
-       , protein=factor*protein food
-       }
-
-addFoods :: Food -> Food -> Food
-addFoods a b =
-  Food { name=""
-       , cost=cost a + cost b
-       , mass=mass a + mass b
-       , calories=calories a + calories b
-       , satFat=satFat a + satFat b
-       , sodium=sodium a + sodium b
-       , vitC=vitC a + vitC b
-       , vitA=vitA a + vitA b
-       , protein=protein a + protein b
-       }
-
-nutrientSummary :: Solution -> String
-nutrientSummary (Optimal (_, amounts)) =
-  show $ foldr addFoods emptyFood scaled
-  where
-    emptyFood =
-      Food { name="empty"
-           , cost=0
-           , mass=0
-           , calories=0
-           , satFat=0
-           , sodium=0
-           , vitC=0
-           , vitA=0
-           , protein=0
-           }
-
-    scaled =
-      map (\(amount, food) -> scaleFood amount food) $ zip amounts foods
-
-amountSummary :: Solution -> String
-amountSummary (Optimal (_, amounts)) =
-  (concat . intersperse "\n" . map (\(amount, food) -> name food ++ ": " ++ (show $ mass food) ++ " grams" ++ " amount: " ++ show amount)) $ zip amounts scaled
-  where
-    scaled =
-      map (\(amount, food) -> scaleFood amount food) $ zip amounts foods
-  ->
-
--}
+main :: IO ()
+main = calculateFood
