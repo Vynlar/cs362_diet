@@ -125,21 +125,23 @@ nutrients = [ (cost, "Cost") -- not a nutrient per say, but still part of our re
 
 summary :: Solution -> [[String]]
 summary (Optimal (_, amounts)) =
-  [ "Food" : "Servings" : map snd nutrients ]
+  [ "Food" : "Grams" : map snd nutrients ]
   ++ (map makeRow $ zip amounts foods)
   ++ blankLine
   ++ [totals]
   where
     makeRow :: (Double, Food) -> [String]
     makeRow (amount, food) =
-      (name food) : (printFloat amount) :
+      (name food) : (printFloat (amount * mass food)) :
         (( map printFloat
         . map (\(getNutrient, _) -> amount * getNutrient food)
         ) nutrients)
 
     totals :: [String]
     totals =
-      [ "Total", "n/a" ]
+      [ "Total"
+      , (printFloat . sum . map (\(amount, food) -> amount * mass food)) $ zip amounts foods
+      ]
       ++ (map makeTotal nutrients)
 
     makeTotal :: ((Food -> Double), String) -> String
